@@ -1,6 +1,5 @@
 package io.github.naomimyselfandi.seededrandom;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -22,6 +21,8 @@ import java.util.*;
  */
 public class SeededRandom extends Random {
 
+    private final long initialSeed;
+
     /**
      * Construct a new {@code SeededRandom} with a given seed.
      * @see SeededRandomExtension Instances of this class are usually provided
@@ -30,6 +31,7 @@ public class SeededRandom extends Random {
      */
     public SeededRandom(long initialSeed) {
         super(initialSeed);
+        this.initialSeed = initialSeed;
     }
 
     /**
@@ -111,23 +113,20 @@ public class SeededRandom extends Random {
     }
 
     /**
-     * On a best-effort basis, this implementation includes the current RNG
-     * state, which may be helpful in debugging failed tests. This may not be
-     * available depending on the JVM or Java version.
+     * Get this instance's initial seed.
+     * @return This instance's initial seed.
+     */
+    public long getInitialSeed() {
+        return initialSeed;
+    }
+
+    /**
+     * A {@code SeededRandom}'s string form contains its initial seed. This may
+     * be helpful while analyzing test failures.
      */
     @Override
     public String toString() {
-        return "SeededRandom[currentState=" + getCurrentState() + "]";
-    }
-
-    private String getCurrentState() {
-        try {
-            Field field = Random.class.getDeclaredField("seed");
-            field.setAccessible(true);
-            return field.get(this).toString();
-        } catch (Exception ignored) {
-            return "unknown";
-        }
+        return "SeededRandom(" + initialSeed + ")";
     }
 
     private static <T> List<T> toList(Iterable<? extends T> candidates) {

@@ -1,5 +1,6 @@
 package io.github.naomimyselfandi.seededrandom;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -12,6 +13,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SuppressWarnings("SpellCheckingInspection")
 class SeededRandomTest {
+
+    @Test
+    void getInitialSeed() {
+        assertEquals(42, new SeededRandom(42).getInitialSeed());
+    }
+
+    @Test
+    void testToString() {
+        assertEquals("SeededRandom(42)", new SeededRandom(42).toString());
+    }
 
     @ParameterizedTest
     @CsvSource({
