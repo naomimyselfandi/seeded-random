@@ -14,6 +14,15 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * seeds.
  * </p>
  * <p>
+ * This extension also takes special consideration for lifecycle callbacks, most
+ * significantly {@code &#64;BeforeEach} methods. **When {@code SeededRandom}s
+ * are injected into multiple methods during the same test, the same instance is
+ * provided for each parameter with the same index.** For example, suppose a
+ * setup method annotated with {@code &#64;BeforeEach} accepts an instance of
+ * {@code SeededRandom} as its first parameter, as does a test method. The setup
+ * method and the test will receive the same instance.
+ * </p>
+ * <p>
  * Seeds are computed using the parameter's index and the test iteration's
  * {@linkplain org.junit.jupiter.api.TestInfo#getDisplayName() display name}
  * which includes the iteration index for all standard test templates. This
@@ -48,6 +57,10 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  */
 public class SeededRandomExtension implements ParameterResolver {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(
+            SeededRandomExtension.class.getCanonicalName()
+    );
+
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         return parameterContext.getParameter().getType() == SeededRandom.class;
@@ -56,9 +69,11 @@ public class SeededRandomExtension implements ParameterResolver {
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         long index = parameterContext.getIndex() + 1L;
-        long hash = extensionContext.getDisplayName().hashCode();
-        long seed = (index << 32) + hash;
-        return new SeededRandom(seed);
+        return extensionContext.getStore(NAMESPACE).getOrComputeIfAbsent("p" + index, key -> {
+            long hash = extensionContext.getDisplayName().hashCode();
+            long seed = (index << 32) + hash;
+            return new SeededRandom(seed);
+        });
     }
 
 }
