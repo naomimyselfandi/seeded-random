@@ -25,6 +25,7 @@ library provides a straightforward, declarative, ergonomic way to do so.
 - Reproducible random values per test method and repetition
 - Support for ordinary, parameterized, and repeated tests
 - Helper methods like `nextUUID()`, `pick(T...)`, and `shuffle(T...)`
+- - Extension mechanism to add methods for domain-specific types
 - Safe and minimal with no runtime dependencies
 - Compatible with Java 8 or later (tested up to Java 23)
 
@@ -101,3 +102,5 @@ class Point2dTest {
 
 }
 ```
+
+If you want to generate random instances of your own types, simply extend `SeededRandom` and inject your subclass into your test methods.

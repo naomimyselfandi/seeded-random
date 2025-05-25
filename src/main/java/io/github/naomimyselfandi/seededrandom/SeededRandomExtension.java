@@ -4,6 +4,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import java.lang.reflect.Constructor;
+
 /**
  * A JUnit 5 extension that provides deterministic randomness in tests.
  * <p>
@@ -11,7 +13,8 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * each with a unique, deterministic seed based on the test method and parameter
  * index. When used with a test template such as {@code @RepeatedTest} or
  * {@code @ParameterizedTest}, all invocations of the test method receive unique
- * seeds.
+ * seeds. Subclasses of `SeededRandom` are automatically supported, so long as
+ * they declare a constructor that accepts a single `long`.
  * </p>
  * <p>
  * This extension also takes special consideration for lifecycle callbacks, most
@@ -63,17 +66,39 @@ public class SeededRandomExtension implements ParameterResolver {
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
-        return parameterContext.getParameter().getType() == SeededRandom.class;
+        return SeededRandom.class.isAssignableFrom(parameterContext.getParameter().getType());
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         long index = parameterContext.getIndex() + 1L;
-        return extensionContext.getStore(NAMESPACE).getOrComputeIfAbsent("p" + index, key -> {
+        Class<?> type = parameterContext.getParameter().getType();
+        return extensionContext.getStore(NAMESPACE.append(type)).getOrComputeIfAbsent("p" + index, key -> {
             long hash = extensionContext.getDisplayName().hashCode();
             long seed = (index << 32) + hash;
-            return new SeededRandom(seed);
+            return construct(type, seed);
         });
+    }
+
+    /**
+     * Construct an instance of a random number generator with a given seed.
+     * @param type The random number generator implementation.
+     * @param seed The seed for the generator.
+     * @return The newly constructed generator.
+     */
+    protected Object construct(Class<?> type, long seed) {
+        return doConstruction(type, seed);
+    }
+
+    static Object doConstruction(Class<?> type, long seed) {
+        try {
+            Constructor<?> constructor = type.getDeclaredConstructor(long.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(seed);
+        } catch (ReflectiveOperationException e) {
+            String message = "Failed to construct " + type.getCanonicalName() + " with seed " + seed + ".";
+            throw new RuntimeException(message, e);
+        }
     }
 
 }

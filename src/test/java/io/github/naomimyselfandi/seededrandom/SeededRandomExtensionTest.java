@@ -1,9 +1,6 @@
 package io.github.naomimyselfandi.seededrandom;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.RepetitionInfo;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -40,6 +37,23 @@ class SeededRandomExtensionTest {
         previouslyGenerated.add(random);
         // If this fails, our test is invalid.
         assertEquals(repetitionInfo.getCurrentRepetition(), previouslyGenerated.size());
+    }
+
+    @Test
+    void test_CanExtendSeededRandom(TestSeededRandom random) {
+        assertNotNull(random);
+        assertNotSame(fromSetupMethod, random);
+    }
+
+    @Test
+    @SuppressWarnings("CatchMayIgnoreException")
+    void test_ReportsConstructionErrors() {
+        try {
+            Object ignored = SeededRandomExtension.doConstruction(void.class, 0L);
+            fail("should have thrown");
+        } catch (RuntimeException e) {
+            assertInstanceOf(NoSuchMethodException.class, e.getCause());
+        }
     }
 
 }
